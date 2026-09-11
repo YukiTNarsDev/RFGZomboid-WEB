@@ -1,0 +1,32 @@
+<!-- 
+  hx-post: Envía los datos por POST a la URL '/login/'
+  hx-target: Dónde pondrá la respuesta el servidor. Apuntamos al ID 'main-content'
+  hx-swap: Cómo lo reemplazará. 'innerHTML' cambia el contenido interno del target.
+-->
+<form hx-post="/login/" hx-target="#main-content" hx-swap="innerHTML">
+    <!-- El token CSRF es OBLIGATORIO en Django para evitar ataques de falsificación de peticiones -->
+    {% csrf_token %}
+    
+    <h2>Iniciar Sesión</h2>
+    
+    <!-- Renderizamos los errores generales del formulario si los hay -->
+    {% if form.non_field_errors %}
+        <div class="error">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div>
+        <label for="id_username">Usuario:</label>
+        {{ form.username }}
+    </div>
+    
+    <div>
+        <label for="id_password">Contraseña:</label>
+        {{ form.password }}
+    </div>
+    
+    <button type="submit">Entrar al Servidor</button>
+</form>

@@ -1,0 +1,19 @@
+<!-- Iteramos sobre los 10 eventos de esta página -->
+{% for evento in page_obj %}
+    <!-- Si es el último elemento de esta tanda Y hay una página siguiente -->
+    {% if forloop.last and page_obj.has_next %}
+        <div class="evento-card" 
+             hx-get="/events/?page={{ page_obj.next_page_number }}" 
+             hx-trigger="revealed" 
+             hx-swap="afterend"> <!-- Inyecta los siguientes 10 justo debajo de este div -->
+            <h4>{{ evento.title }}</h4>
+            <p>{{ evento.description }}</p>
+        </div>
+    {% else %}
+        <!-- Elementos normales -->
+        <div class="evento-card">
+            <h4>{{ evento.title }}</h4>
+            <p>{{ evento.description }}</p>
+        </div>
+    {% endif %}
+{% endfor %
