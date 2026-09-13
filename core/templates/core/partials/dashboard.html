@@ -1,121 +1,349 @@
-<style>
-    /* Definición arquitectónica del layout */
-    .dashboard-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr; /* Dos columnas de igual tamaño */
-        grid-template-rows: auto 1fr auto; /* Encabezado (auto), Contenido (1fr), Panel Inferior (auto) */
-        gap: 20px;
-        height: 95vh;
-        padding: 20px;
-        box-sizing: border-box;
-    }
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8">
+			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+			<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 
-    /* Asignación de áreas a la cuadrícula */
-    .header-area { 
-        grid-column: 1 / 3; /* Ocupa desde la línea de columna 1 hasta la 3 (todo el ancho) */
-        background: #1f4e70; 
-        padding: 15px;
-        display: flex;
-        justify-content: space-between; /* Logo izq, Status centro, Login der */
-        align-items: center;
-        border-radius: 8px;
-    }
-    
-    .events-area { 
-        grid-column: 1 / 2; /* Columna izquierda */
-        background: #1f4e70; 
-        padding: 20px;
-        border-radius: 8px;
-        overflow-y: auto; /* Permite el scroll interno para la lista infinita */
-    }
-    
-    .tickets-area { 
-        grid-column: 2 / 3; 
-        grid-row: 2 / 4; /* Ocupa la fila del medio y la de abajo, abarcando toda la derecha */
-        background: #1f4e70; 
-        padding: 20px;
-        border-radius: 8px;
-        position: relative; /* Para posicionar el botón de 'nuevo ticket' abajo a la derecha */
-        overflow-y: auto;
-    }
-    
-    .paid-panel-area { 
-        grid-column: 1 / 2; /* Columna izquierda, debajo de eventos */
-        background: #1f4e70; 
-        padding: 20px;
-        border-radius: 8px;
-    }
+				<style>
+					/* 1. ECOLOGÍA DE RECURSOS (Variables Globales)
+					Centralizamos la paleta para que cualquier cambio político o estético
+					se propague sin desperdiciar líneas de código. */
+					:root {
+					--territorio-fondo: #111311;
+					--estructura-panel: #242921;
+					--frontera-metalica: #4a5441;
+					--ciudadano-texto: #cdd4c2;
+					--autoridad-texto: #ffffff;
 
-    /* Estilos para el modal de login in-place */
-    #login-modal-container:not(:empty) {
-        position: absolute;
-        top: 70px;
-        right: 20px;
-        background: #2c2c2c;
-        padding: 20px;
-        border: 1px solid #444;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        z-index: 100;
-    }
-</style>
+					/* Colores de Poder e Influencia */
+					--poder-supremo-rojo: #8b2823;
+					--poder-positivo-verde: #2d8a3a;
+					--poder-alerta-amarillo: #c4a14d;
+					--brillo-vital: 0 0 12px rgba(74, 222, 128, 0.6);
+					}
 
-<div class="dashboard-container">
-    <!-- ÁREA 1: ENCABEZADO -->
-    <header class="header-area">
-        <div class="logo">🧟 Proyecto Zomboid</div>
-        
-        <div class="server-status" hx-get="/server-status/" hx-trigger="every 30s">
-            <!-- HTMX actualizará esto automáticamente cada 30 segundos -->
-            🟢 Servidor Online
-        </div>
-        
-        <div class="auth-section">
-            {% if request.user.is_authenticated %}
-                <span>Bienvenido, {{ request.user.username }}</span>
-            {% else %}
-                <!-- HTMX: Trae el formulario de login y lo inyecta en el contenedor de abajo -->
-                <button hx-get="/login-form/" hx-target="#login-modal-container">Iniciar Sesión</button>
-            {% endif %}
-            
-            <!-- Contenedor vacío donde aparecerá el formulario flotante -->
-            <div id="login-modal-container"></div>
-        </div>
-    </header>
+					body {
+					background-color: var(--territorio-fondo);
+					background-image: radial-gradient(circle at center, #1e241c 0%, #0a0c0a 100%);
+					color: var(--ciudadano-texto);
+					font-family: 'Roboto', sans-serif;
+					margin: 0;
+					padding: 2vh 5vw;
+					height: 100vh;
+					box-sizing: border-box;
+					}
 
-    <!-- ÁREA 2: EVENTOS (Lista Infinita) -->
-    <section class="events-area">
-        <h2>Notificaciones y Eventos</h2>
-        <div id="events-list" hx-get="/events/?page=1" hx-trigger="load">
-            <!-- HTMX cargará la primera página al cargar la web -->
-        </div>
-    </section>
+					h1, h2, h3 {
+					font-family: 'Oswald', sans-serif;
+					text-transform: uppercase;
+					letter-spacing: 1.5px;
+					margin: 0;
+					}
 
-    <!-- ÁREA 3: TICKETS (Lista Infinita del Usuario) -->
-    <section class="tickets-area">
-        <h2>Tíckets del Usuario</h2>
-        {% if request.user.is_authenticated %}
-            <div id="tickets-list" hx-get="/my-tickets/?page=1" hx-trigger="load"></div>
-            
-            <!-- Botón anclado abajo a la derecha -->
-            <button style="position: absolute; bottom: 20px; right: 20px;">
-                + Agregar Nuevo Tícket
-            </button>
-        {% else %}
-            <p>Inicia sesión para ver tus tíckets.</p>
-        {% endif %}
-    </section>
+					/* 2. DISTRIBUCIÓN TERRITORIAL (Grid Ecológico) */
+					.dashboard-container {
+					display: grid;
+					grid-template-columns: 1fr 1fr;
+					grid-template-rows: auto 1fr auto;
+					gap: 30px;
+					max-width: 1400px;
+					margin: 0 auto;
+					height: 90vh;
+					}
 
-    <!-- ÁREA 4: PANEL DE USUARIOS PAGOS -->
-    {% if request.user.role == 'PAGO' or request.user.role == 'ADMIN' %}
-    <section class="paid-panel-area">
-        <h3>Panel de Control Premium</h3>
-        <p>Último reinicio: <strong>Hoy, 04:30 AM</strong></p>
-        
-        <!-- Petición POST para solicitar reinicio. -->
-        <button hx-post="/request-restart/" hx-swap="outerHTML">
-            Solicitar Reinicio de Servidor
-        </button>
-    </section>
-    {% endif %}
-</div>
+					/* 3. INFRAESTRUCTURA DE LOS PANELES (Muros y Fronteras) */
+					.panel-militar {
+					background-color: var(--estructura-panel);
+					border: 3px solid var(--frontera-metalica);
+					border-radius: 6px;
+					box-shadow: inset 0 0 25px rgba(0,0,0,0.9), 0 8px 20px rgba(0,0,0,0.6);
+					display: flex;
+					flex-direction: column;
+					position: relative;
+					}
+
+					.panel-header {
+					background: linear-gradient(to bottom, #394332, #242921);
+					border-bottom: 2px solid var(--frontera-metalica);
+					padding: 12px 15px;
+					text-align: center;
+					color: var(--autoridad-texto);
+					font-size: 1.5rem;
+					text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+					}
+
+					/* 4. EL EJE CENTRAL DE GOBIERNO (Header) */
+					.header-area {
+					grid-column: 1 / 3;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 10px 0;
+					}
+
+					.status-badge {
+					background-color: #161a15;
+					border: 2px solid var(--frontera-metalica);
+					border-radius: 30px;
+					padding: 10px 30px;
+					display: flex;
+					align-items: center;
+					gap: 15px;
+					font-family: 'Oswald', sans-serif;
+					font-size: 1.3rem;
+					box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+					}
+
+					.status-dot {
+					width: 18px;
+					height: 18px;
+					background-color: #4ade80;
+					border-radius: 50%;
+					box-shadow: var(--brillo-vital);
+					}
+
+					/* 5. GESTIÓN CÍVICA: Listas Internas */
+					.list-container {
+					padding: 15px;
+					display: flex;
+					flex-direction: column;
+					gap: 12px;
+					overflow-y: auto;
+					flex-grow: 1;
+					}
+
+					.record-item {
+					background-color: rgba(0,0,0,0.4);
+					border: 1px solid #3d4536;
+					padding: 15px;
+					display: flex;
+					align-items: center;
+					gap: 20px;
+					}
+
+					.warning-icon {
+					font-size: 2.2rem;
+					color: var(--poder-alerta-amarillo);
+					}
+
+					.record-content { flex-grow: 1; }
+
+					.record-content h4 {
+					font-size: 1.3rem;
+					color: var(--autoridad-texto);
+					margin-bottom: 4px;
+					}
+
+					.record-content p { margin: 0; font-size: 0.95rem; opacity: 0.8; }
+
+					/* Burocracia y Estados de Tíckets */
+					.ticket-status {
+					padding: 5px 15px;
+					border: 2px solid;
+					border-radius: 20px;
+					font-family: 'Oswald', sans-serif;
+					font-size: 1rem;
+					background: rgba(0,0,0,0.6);
+					min-width: 100px;
+					text-align: center;
+					}
+
+					.status-proceso { border-color: var(--poder-supremo-rojo); color: #ff6b6b; }
+					.status-cerrado { border-color: var(--poder-positivo-verde); color: #4ade80; }
+					.status-resuelto { border-color: var(--poder-alerta-amarillo); color: #ffd966; }
+
+					/* 6. BOTONES (Mecanismos de Acción) */
+					.btn-militar {
+					font-family: 'Oswald', sans-serif;
+					font-size: 1.2rem;
+					padding: 10px 25px;
+					border: 2px solid;
+					border-radius: 4px;
+					cursor: pointer;
+					color: #111;
+					font-weight: 600;
+					box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+					transition: brightness 0.2s;
+					}
+
+					.btn-militar:hover { brightness: 1.2; }
+
+					.btn-login {
+					background: linear-gradient(to bottom, #dcb96f, #b38b36);
+					border-color: #fff;
+					}
+
+					.btn-reinicio {
+					background: linear-gradient(to bottom, #a3322d, #701c19);
+					border-color: #ff6b6b;
+					color: #fff;
+					display: block;
+					margin: 10px auto;
+					width: 90%;
+					padding: 15px;
+					font-size: 1.5rem;
+					text-shadow: 1px 1px 2px #000;
+					}
+
+					.btn-nuevo-ticket {
+					position: absolute;
+					bottom: -20px;
+					right: 20px;
+					background: linear-gradient(to bottom, #dcb96f, #b38b36);
+					border-color: #fff;
+					display: flex;
+					align-items: center;
+					gap: 10px;
+					z-index: 10;
+					}
+					.modal-backdrop {
+					position: fixed;
+					top: 0;
+					left: 0;
+					width: 100vw;
+					height: 100vh;
+					background: rgba(0, 0, 0, 0.7);
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					z-index: 1000;
+					}
+					.modal-content {
+					background: #2c2c2c; /* Color del diseño de tu imagen */
+					padding: 30px;
+					border-radius: 8px;
+					width: 100%;
+					max-width: 400px;
+					box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+					}
+
+					/* Políticas de Sostenibilidad del Scroll */
+					::-webkit-scrollbar { width: 6px; }
+					::-webkit-scrollbar-track { background: transparent; }
+					::-webkit-scrollbar-thumb { background: var(--frontera-metalica); }
+				</style>
+			</head>
+	<body>
+
+		<div class="dashboard-container">
+
+			<!-- GOBIERNO CENTRAL: Encabezado -->
+			<header class="header-area">
+				<div class="logo">
+					<!-- Espacio reservado para tu logo ecológicamente optimizado (SVG o WebP) -->
+					<h2>RFC ZOMBOID</h2>
+				</div>
+
+				<div class="status-badge" hx-get="/server-status/" hx-trigger="every 30s">
+					<div class="status-dot"></div>
+					ESTADO DEL SERVIDOR: EN LÍNEA (142/200 JUGADORES)
+				</div>
+
+				<div class="auth-section">
+					{% if request.user.is_authenticated %}
+					<button class="btn-militar btn-login" hx-post="/logout/">CERRAR SESIÓN</button>
+					{% else %}
+					<button class="btn-militar btn-login" hx-get="/login-form/" hx-target="#login-modal">👤 INICIAR SESIÓN / LOGIN</button>
+					{% endif %}
+					<div id="login-modal"></div>
+				</div>
+				<div class="auth-section">
+					{% if request.user.is_authenticated %}
+					<span>Sesión iniciada como: {{ request.user.username }} ({{ request.user.get_role_display }})</span>
+					<button hx-post="/logout/">Cerrar Sesión</button>
+					{% else %}
+					<!-- 
+          hx-get: Pide el formulario a la vista login_view
+          hx-target: Dónde lo inyecta (en el div vacío de abajo)
+          hx-swap: 'innerHTML' significa que pondrá el contenido dentro del contenedor
+        -->
+					<button hx-get="/login/" hx-target="#login-modal-container" hx-swap="innerHTML">
+						Iniciar Sesión
+					</button>
+					{% endif %}
+				</div>
+				<div id="login-modal-container"></div>
+
+				<!-- EJEMPLO DE RESTRICCIÓN POR ROL EN EL DASHBOARD -->
+				<!-- Esta sección solo existirá en el HTML si el usuario pasó por el popup y tiene el rol correcto -->
+				{% if request.user.is_authenticated and request.user.role == 'PAGO' %}
+				<section class="panel-pagos">
+					<h3>Panel VIP</h3>
+					<button>Reiniciar Servidor</button>
+				</section>
+				{% endif %}
+				
+			</header>
+
+			<!-- TERRITORIO PÚBLICO: Eventos -->
+			<section class="panel-militar" style="grid-column: 1 / 2;">
+				<div class="panel-header">NOTIFICACIONES Y EVENTOS</div>
+				<div class="list-container" hx-get="/events/" hx-trigger="load">
+
+					<!-- Ejemplo de Item Ecológico (HTMX reemplazará esto dinámicamente) -->
+					<div class="record-item">
+						<div class="warning-icon">⚠️</div>
+						<div class="record-content">
+							<h4>MANTENIMIENTO DE SERVIDOR - 15:00</h4>
+							<p>Mantenimiento de servidor y un enrutamiento de servidor a servidor.</p>
+						</div>
+					</div>
+
+					<div class="record-item">
+						<div class="warning-icon">⚠️</div>
+						<div class="record-content">
+							<h4>¡EVENTO: LA HORDA DEL SÁBADO!</h4>
+							<p>Defiende la cuenca este sábado a las 20:00.</p>
+						</div>
+					</div>
+
+				</div>
+			</section>
+
+			<!-- GESTIÓN CIUDADANA: Tíckets -->
+			<section class="panel-militar" style="grid-column: 2 / 3; grid-row: 2 / 4;">
+				<div class="panel-header">TICKETS DEL USUARIO</div>
+				<div class="list-container" hx-get="/my-tickets/" hx-trigger="load">
+
+					<div class="record-item">
+						<div class="record-content">
+							<h4>#0421 - Pérdida de item tras caída</h4>
+							<small>20/10/2023</small>
+						</div>
+						<div class="ticket-status status-proceso">EN PROCESO</div>
+					</div>
+
+					<div class="record-item">
+						<div class="record-content">
+							<h4>#0398 - Reporte de bug de terreno</h4>
+							<small>14/10/2023</small>
+						</div>
+						<div class="ticket-status status-cerrado">CERRADO</div>
+					</div>
+
+				</div>
+
+				<button class="btn-militar btn-nuevo-ticket">
+					<span style="font-size: 1.5rem;">+</span> CREAR NUEVO TICKET
+				</button>
+			</section>
+
+			<!-- PRIVILEGIOS DE CLASE: Panel VIP -->
+			{% if request.user.role == 'PAGO' or request.user.role == 'ADMIN' %}
+			<section class="panel-militar" style="grid-column: 1 / 2; grid-row: 3 / 4;">
+				<div class="panel-header">PANEL DE CONTROL VIP / USUARIOS PAGOS</div>
+				<div style="padding: 20px; text-align: center;">
+					<button class="btn-militar btn-reinicio" hx-post="/request-restart/" hx-swap="none">
+						REINICIAR SERVIDOR
+					</button>
+					<p style="margin-top: 15px; font-family: 'Roboto', sans-serif; opacity: 0.7;">
+						Último reinicio: 08:30 AM
+					</p>
+				</div>
+			</section>
+			{% endif %}
+
+		</div>
+	</body>
+</html>

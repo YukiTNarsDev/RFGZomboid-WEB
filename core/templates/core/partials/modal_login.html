@@ -1,0 +1,174 @@
+<style>
+    /* ECOLOGÍA VISUAL: Reutilizamos colores oscuros nativos para reducir 
+       la fatiga visual y el consumo energético de las pantallas OLED. */
+    .frontera-login {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background-color: #2b2b2b;
+        border: 1px solid #1a1a1a;
+        border-radius: 8px;
+        padding: 25px;
+        width: 320px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        z-index: 1000;
+        /* Tipografía heredada para mantener homogeneidad política */
+        font-family: 'Roboto', sans-serif;
+        color: #e0e0e0;
+    }
+
+    .frontera-login h3 {
+        margin: 0 0 15px 0;
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #ffffff;
+    }
+
+    .frontera-login h4 {
+        margin: 0 0 20px 0;
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.2rem;
+        color: #ffffff;
+    }
+
+    /* POLÍTICA DE INGRESO: Los campos de captura de datos */
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+
+    .input-group label {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+        color: #cccccc;
+    }
+
+    .input-group input {
+        background-color: #1a1a1a;
+        border: 1px solid #444;
+        color: #fff;
+        padding: 8px 10px;
+        border-radius: 4px;
+        font-family: monospace; /* Evita ambigüedades en caracteres de contraseñas */
+    }
+
+    .input-group input:focus {
+        outline: none;
+        border-color: #5cb85c;
+        box-shadow: 0 0 5px rgba(92, 184, 92, 0.3);
+    }
+
+    /* EL BOTÓN DE ACCIÓN: Autorización del Estado */
+    .btn-autorizar {
+        width: 100%;
+        background-color: #5cb85c; /* Verde de la imagen */
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background-color 0.2s;
+    }
+
+    .btn-autorizar:hover {
+        background-color: #4cae4c;
+    }
+    
+    .error-migratorio {
+        color: #ff6b6b;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+        padding: 8px;
+        background: rgba(255, 0, 0, 0.1);
+        border-left: 3px solid #ff6b6b;
+    }
+</style>
+
+<div class="frontera-login">
+    <h3>🧟 Zomboid Server Manager</h3>
+    <h4>Iniciar Sesión</h4>
+
+    <!-- 
+      POLÍTICA DE ESTADO: 
+      hx-post envía las credenciales al servidor de forma asíncrona.
+      Si falla, hx-target="#login-modal" reemplaza este mismo formulario con los errores.
+    -->
+    <form hx-post="/login/" hx-target="#login-modal" hx-swap="innerHTML">
+        
+        <!-- EL PASAPORTE (CSRF): Impide que estados o sitios extranjeros falsifiquen esta petición -->
+        {% csrf_token %}
+        
+        <!-- Control de Errores -->
+        {% if form.non_field_errors %}
+            <div class="error-migratorio">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="input-group">
+            <label for="{{ form.username.id_for_label }}">Usuario:</label>
+            <!-- Renderizamos el campo nativo de Django, añadiendo estilos en la vista o dejándolo genérico -->
+            {{ form.username }}
+        </div>
+
+        <div class="input-group">
+            <label for="{{ form.password.id_for_label }}">Contraseña:</label>
+            {{ form.password }}
+        </div>
+
+        <button type="submit" class="btn-autorizar">Entrar al Servidor</button>
+    </form>
+</div>
+<div class="modal-backdrop" onclick="document.getElementById('login-modal-container').innerHTML=''">
+    
+    <!-- 
+      El contenido real. 
+      onclick="event.stopPropagation()" evita que al hacer clic dentro del formulario se cierre el modal.
+    -->
+    <div class="modal-content" onclick="event.stopPropagation()">
+        
+        <h2 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+            🧟 Zomboid Server Manager
+        </h2>
+        <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px;">
+            Iniciar Sesión
+        </h3>
+        
+        <!-- 
+          hx-post: Envía los datos al servidor.
+          hx-target: Apunta a este mismo contenedor para reemplazarse a sí mismo si hay errores de validación.
+        -->
+        <form hx-post="/login/" hx-target=".modal-content" hx-swap="outerHTML">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div style="color: #ff6b6b; margin-bottom: 15px; font-weight: bold;">
+                    {{ form.non_field_errors.0 }}
+                </div>
+            {% endif %}
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Usuario:</label>
+                {{ form.username }}
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px;">Contraseña:</label>
+                {{ form.password }}
+            </div>
+            
+            <!-- Botón verde similar al de tu referencia -->
+            <button type="submit" style="width: 100%; background: #4CAF50; color: white; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                Entrar al Servidor
+            </button>
+        </form>
+    </div>
+</div>

@@ -6,39 +6,37 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from .models import EventNotice
 
-def home_view(request):
-    """
-    Esta es la vista del 'Shell' o esqueleto de nuestra SPA.
-    Siempre devuelve la página completa inicial.
-    """
-    # Si el usuario ya está logueado, lo mandamos al dashboard directamente
-    if request.user.is_authenticated:
-        return render(request, 'core/base.html', {'initial_partial': 'core/partials/dashboard.html'})
-    
-    # Si no, cargamos la base con el formulario de login incrustado
-    return render(request, 'core/base.html', {'initial_partial': 'core/partials/login_form.html'})
-
-def get_login_form(request):
-    """Devuelve únicamente el HTML del formulario para inyectarlo en el header."""
-    form = AuthenticationForm()
-    return render(request, 'core/partials/login_form.html', {'form': form})
-
-@login_required # Protegemos la vista: solo usuarios logueados pueden entrar
 def dashboard_view(request):
     """
-    Fragmento HTML del panel de control principal.
+    Punto de entrada principal. 
+    Siempre devuelve la estructura del dashboard. Las secciones privadas 
+    se ocultarán o mostrarán dentro del template usando {% if request.user.is_authenticated %}
     """
-    return render(request, 'core/partials/dashboard.html')
+    return render(request, '\core\dashboard.html')
 
+def login_view(request):
+    """
+    Esta vista maneja exclusivamente el popup de login mediante HTMX.
+    """
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user) # Inicia sesión en el backend
+            
+            # ¿Por qué usamos HX-Refresh?
+            # Al autenticarse con éxito, necesitamos que todo el dashboard se reconstruya
+            # para que Django evalúe los permisos (ej. request.user.role == 'PAGO') de forma segura en el servidor.
+            # HX-Refresh le indica al navegador que haga una recarga limpia.
+            response = HttpResponse()
+            response['HX-Refresh'] = "true"
+            return response
+        else:
+            # Si hay error (contraseña incorrecta), devolvemos el formulario con los errores
+            # para que HTMX lo reemplace dentro del popup sin cerrar el modal.
+            return render(request, 'core/partials/modal_login.html', {'form': form})
 
-
-def events_list_view(request):
-    # Obtenemos los eventos ordenados por los más recientes
-    event_list = EventNotice.objects.all().order_by('-created_at')
-    
-    # Dividimos los resultados en bloques de 10
-    paginator = Paginator(event_list, 10)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'core/partials/event_items.html', {'page_obj': page_obj})
+    # Si la petición es GET (cuando el usuario hace clic en el botón de login),
+    # devolvemos el HTML del formulario vacío.
+    form = AuthenticationForm()
+    return render(request, 'core/partials/modal_login.html', {'form': form})
